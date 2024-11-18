@@ -1,40 +1,54 @@
+import type { Message } from 'discord.js'
 import { Client } from 'discord.js'
-import { Answer, Poll } from './component'
+import { useState } from 'react'
+import { Answer, Button, Poll } from './component'
 import * as container from './container'
-import { createMessageOptions } from './message'
+import { createMessageOptions, hydrateMessages } from './message'
 import Renderer from './renderer'
 
-const root = container.create()
+function App() {
+  const [count, setCount] = useState(0)
 
-Renderer.render(
-  <>
-    Example of Poll
-    <Poll question="What is your favourite fruit?">
-      <Answer emoji="🍎">Apple</Answer>
-      <Answer emoji="🍌">Apple</Answer>
-    </Poll>
-
-    Example of Another Poll
-    <Poll question="What is your favourite fruit?">
-      <Answer emoji="🍎">Apple</Answer>
-      <Answer emoji="🍌">Apple</Answer>
-    </Poll>
-
-    Sending multiple messages in one component!
-  </>,
-  root,
-)
+  return (
+    <>
+      <Button onClick={() => setCount(count + 1)}>Increment</Button>
+      {count}
+    </>
+  )
+}
 
 async function main() {
   const client = new Client({ intents: [] })
   await client.login('BOT TOKEN')
 
-  const channel = await client.channels.fetch('295979103843254283')
+  const channel = await client.channels.fetch('1172265844961714259')
+  const messages: Message[] = []
+
+  const root = container.create()
+  Renderer.render(<App />, root)
+
+  const messageOptions = createMessageOptions(root)
 
   if (channel?.isSendable()) {
-    for (const options of createMessageOptions(root)) {
-      await channel.send(options)
+    for (const options of messageOptions) {
+      messages.push(await channel.send(options))
     }
+  }
+
+  hydrateMessages(messages, root)
+
+  root.onChange = async () => {
+    const newOptions = createMessageOptions(root)
+
+    await Promise.all(newOptions.map(async (options, i) => {
+      if (messages[i] !== undefined && JSON.stringify(messageOptions[i]) !== JSON.stringify(options)) {
+        messageOptions[i] = options
+        return messages[i].edit({
+          ...options,
+          flags: [],
+        })
+      }
+    }))
   }
 }
 

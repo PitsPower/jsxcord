@@ -1,8 +1,11 @@
-import type { MessageCreateOptions, PollAnswerData, PollData } from 'discord.js'
+import type { InteractionButtonComponentData, MessageCreateOptions, PollAnswerData, PollData } from 'discord.js'
+import { ButtonStyle, ComponentType } from 'discord.js'
+import { v4 as uuidv4 } from 'uuid'
 
 type InstanceType =
   | 'Answer'
   | 'Base'
+  | 'Button'
   | 'Poll'
   | 'Text'
 
@@ -31,8 +34,63 @@ abstract class BaseInstance<Data> {
   }
 
   constructor(public data: Data) {}
-  abstract appendChild(child: Instance | TextInstance): void
+  abstract appendChild(child: Instance | TextInstance)
   abstract addToOptions(options: MessageCreateOptions)
+}
+
+interface AnswerProps {
+  emoji?: string
+}
+
+export class AnswerInstance extends BaseInstance<PollAnswerData> {
+  static type: InstanceType = 'Answer'
+
+  static createInstance(props: AnswerProps) {
+    return new AnswerInstance({
+      text: '',
+      emoji: props.emoji,
+    })
+  }
+
+  appendChild(child: Instance | TextInstance) {
+    this.data.text += enforceType(child, TextInstance).data
+  }
+
+  addToOptions(_options: MessageCreateOptions) {
+    throw new Error('Not implemented.')
+  }
+}
+
+interface ButtonProps {
+  onClick?: () => void
+}
+
+export class ButtonInstance extends BaseInstance<InteractionButtonComponentData & ButtonProps> {
+  static type: InstanceType = 'Button'
+
+  static createInstance(props: ButtonProps) {
+    return new ButtonInstance({
+      type: ComponentType.Button,
+      label: '',
+      style: ButtonStyle.Primary,
+      customId: uuidv4(),
+      onClick: props.onClick,
+    })
+  }
+
+  appendChild(child: Instance | TextInstance) {
+    this.data.label += enforceType(child, TextInstance).data
+  }
+
+  addToOptions(options: MessageCreateOptions) {
+    options.components = [
+      ...(options.components ?? []),
+      {
+        type: ComponentType.ActionRow,
+        components: [this.data],
+      },
+    ]
+  }
 }
 
 interface PollProps {
@@ -63,29 +121,6 @@ export class PollInstance extends BaseInstance<PollData> {
   }
 }
 
-interface AnswerProps {
-  emoji?: string
-}
-
-export class AnswerInstance extends BaseInstance<PollAnswerData> {
-  static type: InstanceType = 'Answer'
-
-  static createInstance(props: AnswerProps) {
-    return new AnswerInstance({
-      text: '',
-      emoji: props.emoji,
-    })
-  }
-
-  appendChild(child: Instance | TextInstance) {
-    this.data.text += enforceType(child, TextInstance).data
-  }
-
-  addToOptions(_options: MessageCreateOptions) {
-    throw new Error('Not implemented.')
-  }
-}
-
 export class TextInstance extends BaseInstance<string> {
   static type: InstanceType = 'Text'
 
@@ -98,5 +133,5 @@ export class TextInstance extends BaseInstance<string> {
   }
 }
 
-export type Instance = PollInstance | AnswerInstance
+export type Instance = AnswerInstance | ButtonInstance | PollInstance
 export type InstanceOrText = Instance | TextInstance

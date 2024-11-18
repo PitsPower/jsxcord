@@ -15,7 +15,7 @@ const reconciler = Reconciler<
   unknown,
   unknown,
   unknown,
-  unknown,
+  Record<string, unknown>,
   unknown,
   number,
   -1
@@ -45,8 +45,16 @@ const reconciler = Reconciler<
     return false
   },
 
-  prepareUpdate() {
-    throw new Error('Function not implemented.')
+  prepareUpdate(_instance, _type, oldProps, newProps) {
+    const result: Record<string, unknown> = {}
+
+    for (const key of Object.keys(oldProps.props)) {
+      if (key !== 'children' && oldProps.props[key] !== newProps.props[key]) {
+        result[key] = newProps.props[key]
+      }
+    }
+
+    return Object.keys(result).length === 0 ? null : result
   },
 
   shouldSetTextContent() {
@@ -69,7 +77,9 @@ const reconciler = Reconciler<
     return null
   },
 
-  resetAfterCommit() {},
+  resetAfterCommit(container) {
+    void container.onChange?.()
+  },
 
   preparePortalMount() {
     throw new Error('Function not implemented.')
@@ -109,6 +119,14 @@ const reconciler = Reconciler<
 
   appendChildToContainer(container, child) {
     container.children.push(child)
+  },
+
+  commitUpdate(instance, updatePayload) {
+    instance.data = { ...instance.data, ...updatePayload }
+  },
+
+  commitTextUpdate(textInstance, _oldText, newText) {
+    textInstance.data = newText
   },
 })
 
