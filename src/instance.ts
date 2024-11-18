@@ -1,4 +1,4 @@
-import type { InteractionButtonComponentData, MessageCreateOptions, PollAnswerData, PollData } from 'discord.js'
+import type { ButtonInteraction, InteractionButtonComponentData, MessageCreateOptions, PollAnswerData, PollData } from 'discord.js'
 import { ButtonStyle, ComponentType } from 'discord.js'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -56,13 +56,13 @@ export class AnswerInstance extends BaseInstance<PollAnswerData> {
     this.data.text += enforceType(child, TextInstance).data
   }
 
-  addToOptions(_options: MessageCreateOptions) {
-    throw new Error('Not implemented.')
+  addToOptions() {
+    throw new Error('Attempted to add `AnswerInstance` to message options. This is a bug!')
   }
 }
 
 interface ButtonProps {
-  onClick?: () => void
+  onClick?: (interaction: ButtonInteraction) => void
 }
 
 export class ButtonInstance extends BaseInstance<InteractionButtonComponentData & ButtonProps> {

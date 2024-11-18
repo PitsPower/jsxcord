@@ -121,6 +121,11 @@ const reconciler = Reconciler<
     container.children.push(child)
   },
 
+  insertInContainerBefore(container, child, beforeChild) {
+    const index = container.children.findIndex(c => c === beforeChild)
+    container.children.splice(index, 0, child)
+  },
+
   commitUpdate(instance, updatePayload) {
     instance.data = { ...instance.data, ...updatePayload }
   },

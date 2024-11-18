@@ -1,5 +1,5 @@
 import type { Container } from './container'
-import { ComponentType, type Message, type MessageCreateOptions } from 'discord.js'
+import { ComponentType, InteractionResponse, type Message, type MessageCreateOptions } from 'discord.js'
 import { ButtonInstance, PollInstance, TextInstance } from './instance'
 
 const MESSAGE_PARTS = [
@@ -59,7 +59,7 @@ export function hydrateMessages(messages: Message[], container: Container) {
               }
 
               void interaction.deferUpdate()
-              onClick()
+              onClick(interaction)
             })
 
             break
