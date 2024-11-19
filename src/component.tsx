@@ -1,5 +1,9 @@
 import type { PropsWithChildren, ReactNode } from 'react'
-import { createElement } from 'react'
+import type { TrackHandle } from './audio'
+import path from 'node:path'
+import { createElement, useContext, useEffect, useState } from 'react'
+import { AudioContext } from '.'
+import { streamFromFile } from './audio'
 import { AnswerInstance, ButtonInstance, type Instance, PollInstance } from './instance'
 
 export interface NodeProps<P, I extends Instance> {
@@ -25,3 +29,37 @@ function createComponent<P, I extends Instance>(
 export const Answer = createComponent(AnswerInstance)
 export const Button = createComponent(ButtonInstance)
 export const Poll = createComponent(PollInstance)
+
+interface AudioProps {
+  src: string
+  paused?: boolean
+}
+
+export function Audio({ src, paused }: AudioProps) {
+  const audioContext = useContext(AudioContext)
+  const [track, setTrack] = useState<TrackHandle | null>(null)
+
+  useEffect(() => {
+    audioContext?.joinVc()
+
+    const stream = streamFromFile(path.resolve(src))
+    setTrack(audioContext?.mixer.playTrack(stream, paused) ?? null)
+
+    return () => {
+      if (track !== null) {
+        audioContext?.mixer.stopTrack(track)
+        setTrack(null)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (track === null) {
+      return
+    }
+
+    paused ? audioContext?.mixer.pauseTrack(track) : audioContext?.mixer.resumeTrack(track)
+  }, [paused])
+
+  return <></>
+}

@@ -33,6 +33,8 @@ abstract class BaseInstance<Data> {
     return (this.constructor as typeof BaseInstance<Data>).type
   }
 
+  public isHidden = false
+
   constructor(public data: Data) {}
   abstract appendChild(child: Instance | TextInstance)
   abstract addToOptions(options: MessageCreateOptions)

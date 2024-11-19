@@ -1,6 +1,8 @@
-import type { InteractionResponse, Message } from 'discord.js'
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js'
-import { type ReactNode, Suspense } from 'react'
+import type { ChatInputCommandInteraction, Message } from 'discord.js'
+import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice'
+import { Client, GatewayIntentBits, GuildMember, REST, Routes, SlashCommandBuilder } from 'discord.js'
+import { createContext, type ReactNode, Suspense } from 'react'
+import { Mixer } from './audio'
 import * as container from './container'
 import { createMessageOptions, hydrateMessages } from './message'
 import Renderer from './renderer'
@@ -13,10 +15,20 @@ function sync<Args extends unknown[]>(
 
 export * from './component'
 
+interface AudioContextData {
+  mixer: Mixer
+  joinVc: () => void
+}
+
+export const AudioContext = createContext<AudioContextData | null>(null)
+
 export function bot(
-  commands: Record<string, ReactNode>,
+  commands: Record<string, ReactNode | ((interaction: ChatInputCommandInteraction) => Promise<void>)>,
 ): Client {
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] })
+  const client = new Client({ intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+  ] })
 
   client.on('ready', (client) => {
     const rest = new REST().setToken(client.token)
@@ -39,12 +51,58 @@ export function bot(
       return
     }
 
-    const node = commands[interaction.commandName]
+    const nodeOrFunc = commands[interaction.commandName]
+
+    if (typeof nodeOrFunc === 'function') {
+      await nodeOrFunc(interaction)
+      return
+    }
+
     const root = container.create(client)
     const messages: Message[] = []
 
+    const mixer = new Mixer()
+    let hasJoinedVc = false
+
+    const audioContext: AudioContextData = {
+      mixer,
+
+      joinVc: () => {
+        if (hasJoinedVc) {
+          return
+        }
+
+        const member = interaction.member
+        if (!(member instanceof GuildMember)) {
+          return
+        }
+
+        const voiceChannel = member.voice.channel
+        if (voiceChannel === null || !voiceChannel.joinable) {
+          return
+        }
+
+        const connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: voiceChannel.guildId,
+          adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+        })
+
+        const player = createAudioPlayer()
+        connection.subscribe(player)
+
+        player.play(mixer.getAudioResource())
+
+        hasJoinedVc = true
+      },
+    }
+
     Renderer.render(
-      <Suspense fallback={<></>}>{node}</Suspense>,
+      <Suspense fallback={<></>}>
+        <AudioContext.Provider value={audioContext}>
+          {nodeOrFunc}
+        </AudioContext.Provider>
+      </Suspense>,
       root,
     )
 

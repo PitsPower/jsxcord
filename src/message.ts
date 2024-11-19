@@ -16,6 +16,10 @@ export function createMessageOptions(container: Container): MessageCreateOptions
   const result = [currentOptions]
 
   for (const child of container.children) {
+    if (child.isHidden) {
+      continue
+    }
+
     while (true) {
       const possibleInstances = MESSAGE_PARTS[currentMessageStage]
       if (possibleInstances.some(InstanceClass => child instanceof InstanceClass)) {

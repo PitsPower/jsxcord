@@ -133,6 +133,22 @@ const reconciler = Reconciler<
   commitTextUpdate(textInstance, _oldText, newText) {
     textInstance.data = newText
   },
+
+  hideInstance(instance) {
+    instance.isHidden = true
+  },
+
+  hideTextInstance(textInstance) {
+    textInstance.isHidden = true
+  },
+
+  unhideInstance(instance) {
+    instance.isHidden = false
+  },
+
+  unhideTextInstance(textInstance) {
+    textInstance.isHidden = false
+  },
 })
 
 export default {
