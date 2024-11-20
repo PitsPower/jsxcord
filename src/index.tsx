@@ -7,13 +7,13 @@ import * as container from './container'
 import { createMessageOptions, hydrateMessages } from './message'
 import Renderer from './renderer'
 
+export * from './component'
+
 function sync<Args extends unknown[]>(
   func: (...args: Args) => Promise<void>,
 ): (...args: Args) => void {
   return (...args) => void func(...args).catch(console.error)
 }
-
-export * from './component'
 
 interface AudioContextData {
   mixer: Mixer

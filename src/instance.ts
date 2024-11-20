@@ -1,5 +1,5 @@
 import type { ButtonInteraction, InteractionButtonComponentData, MessageCreateOptions, PollAnswerData, PollData } from 'discord.js'
-import { ButtonStyle, ComponentType } from 'discord.js'
+import { ButtonStyle, ComponentType, escapeMarkdown } from 'discord.js'
 import { v4 as uuidv4 } from 'uuid'
 
 type InstanceType =
@@ -131,7 +131,13 @@ export class TextInstance extends BaseInstance<string> {
   }
 
   addToOptions(options: MessageCreateOptions) {
-    options.content += this.data
+    // Escape all Markdown in text
+    options.content += escapeMarkdown(this.data, {
+      bulletedList: true,
+      heading: true,
+      maskedLink: true,
+      numberedList: true,
+    })
   }
 }
 

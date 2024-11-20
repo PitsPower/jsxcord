@@ -82,7 +82,7 @@ export class Mixer extends Readable {
     }
   }
 
-  /** Gets the stream's `AudioResource` */
+  /** Gets the mixer's `AudioResource` */
   getAudioResource() {
     return createAudioResource(this, { inputType: StreamType.Raw })
   }

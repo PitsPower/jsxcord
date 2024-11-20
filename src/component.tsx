@@ -1,6 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import type { TrackHandle } from './audio'
 import path from 'node:path'
+import { time, TimestampStyles } from 'discord.js'
 import { createElement, useContext, useEffect, useState } from 'react'
 import { AudioContext } from '.'
 import { streamFromFile } from './audio'
@@ -75,9 +76,5 @@ export function Timer({ seconds, onEnd }: TimerProps) {
     return () => clearTimeout(timeout)
   }, [])
 
-  return (
-    <>
-      {`<t:${Math.round(Date.now() / 1000) + seconds}:R>`}
-    </>
-  )
+  return time(new Date(Date.now() + seconds * 1000), TimestampStyles.RelativeTime)
 }
