@@ -1,4 +1,12 @@
-import { Audio, bot } from '.'
+import { useState } from 'react'
+import { Audio, bot, Timer } from '.'
+
+function TimerTest() {
+  const [ended, setEnded] = useState(false)
+  return ended
+    ? 'Timer ended!'
+    : <Timer seconds={10} onEnd={() => setEnded(true)} />
+}
 
 const client = bot({
   ping: 'Pong!',
@@ -8,6 +16,7 @@ const client = bot({
       <Audio src="./assets/test.mp3" />
     </>
   ),
+  timer: <TimerTest />,
 })
 
 client

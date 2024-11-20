@@ -63,3 +63,21 @@ export function Audio({ src, paused }: AudioProps) {
 
   return <></>
 }
+
+interface TimerProps {
+  seconds: number
+  onEnd?: () => void
+}
+
+export function Timer({ seconds, onEnd }: TimerProps) {
+  useEffect(() => {
+    const timeout = setTimeout(() => onEnd?.(), seconds * 1000)
+    return () => clearTimeout(timeout)
+  }, [])
+
+  return (
+    <>
+      {`<t:${Math.round(Date.now() / 1000) + seconds}:R>`}
+    </>
+  )
+}

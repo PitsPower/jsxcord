@@ -126,6 +126,10 @@ const reconciler = Reconciler<
     container.children.splice(index, 0, child)
   },
 
+  removeChildFromContainer(container, child) {
+    container.children = container.children.filter(c => c !== child)
+  },
+
   commitUpdate(instance, updatePayload) {
     instance.data = { ...instance.data, ...updatePayload }
   },
