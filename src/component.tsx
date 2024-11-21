@@ -1,11 +1,12 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import type { TrackHandle } from './audio'
+import type { ALL_LANGUAGES } from './languages'
 import path from 'node:path'
 import { time, TimestampStyles } from 'discord.js'
 import { createElement, useContext, useEffect, useState } from 'react'
 import { AudioContext } from '.'
 import { streamFromFile } from './audio'
-import { AnswerInstance, ButtonInstance, type Instance, PollInstance } from './instance'
+import { AnswerInstance, ButtonInstance, type Instance, MarkdownInstance, PollInstance } from './instance'
 
 export interface NodeProps<P, I extends Instance> {
   props: P
@@ -29,7 +30,33 @@ function createComponent<P, I extends Instance>(
 
 export const Answer = createComponent(AnswerInstance)
 export const Button = createComponent(ButtonInstance)
+export const Markdown = createComponent(MarkdownInstance)
 export const Poll = createComponent(PollInstance)
+
+function createMarkdownComponent<Props>(func: (input: string, props: Props) => string) {
+  return (props: PropsWithChildren<Props>) => {
+    const input = props.children?.toString()
+    if (input === undefined) {
+      throw new Error('Expected text in <Markdown>.')
+    }
+    return <Markdown>{func(input, props)}</Markdown>
+  }
+}
+
+export const Br = () => '\n'
+
+export const Header = createMarkdownComponent(str => `# ${str}\n`)
+export const Subheader = createMarkdownComponent(str => `## ${str}\n`)
+export const Subsubheader = createMarkdownComponent(str => `### ${str}\n`)
+export const Tiny = createMarkdownComponent(str => `-# ${str}\n`)
+
+export const Code = createMarkdownComponent(str => `\`${str}\``)
+export const CodeBlock = createMarkdownComponent<{ language?: typeof ALL_LANGUAGES[number] }>(
+  (str, props) =>
+    `\`\`\`${props.language ?? ''}\n${str}\`\`\``,
+)
+
+export const Quote = createMarkdownComponent(str => `> ${str}\n`)
 
 interface AudioProps {
   src: string

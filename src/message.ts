@@ -1,9 +1,9 @@
 import type { Container } from './container'
 import { ComponentType, InteractionResponse, type Message, type MessageCreateOptions } from 'discord.js'
-import { ButtonInstance, PollInstance, TextInstance } from './instance'
+import { ButtonInstance, MarkdownInstance, PollInstance, TextInstance } from './instance'
 
 const MESSAGE_PARTS = [
-  [TextInstance],
+  [MarkdownInstance, TextInstance],
   [PollInstance],
   [ButtonInstance],
 ]

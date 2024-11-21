@@ -6,6 +6,7 @@ type InstanceType =
   | 'Answer'
   | 'Base'
   | 'Button'
+  | 'Markdown'
   | 'Poll'
   | 'Text'
 
@@ -95,6 +96,22 @@ export class ButtonInstance extends BaseInstance<InteractionButtonComponentData 
   }
 }
 
+export class MarkdownInstance extends BaseInstance<{ text: string }> {
+  static type: InstanceType = 'Markdown'
+
+  static createInstance() {
+    return new MarkdownInstance({ text: '' })
+  }
+
+  appendChild(child: Instance | TextInstance) {
+    this.data.text += enforceType(child, TextInstance).data
+  }
+
+  addToOptions(options: MessageCreateOptions) {
+    options.content += this.data.text
+  }
+}
+
 interface PollProps {
   question: string
 }
@@ -141,5 +158,5 @@ export class TextInstance extends BaseInstance<string> {
   }
 }
 
-export type Instance = AnswerInstance | ButtonInstance | PollInstance
+export type Instance = AnswerInstance | ButtonInstance | MarkdownInstance | PollInstance
 export type InstanceOrText = Instance | TextInstance
