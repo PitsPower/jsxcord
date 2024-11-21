@@ -1,13 +1,16 @@
-import type { ChatInputCommandInteraction, Message } from 'discord.js'
+import type { ChatInputCommandInteraction, Interaction, Message, MessageCreateOptions } from 'discord.js'
+import type { CachedDataStore, NotifyingDataStore } from './store'
 import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice'
 import { Client, GatewayIntentBits, GuildMember, REST, Routes, SlashCommandBuilder } from 'discord.js'
 import { createContext, type ReactNode, Suspense } from 'react'
 import { Mixer } from './audio'
 import * as container from './container'
-import { createMessageOptions, hydrateMessages } from './message'
+import { createMessageOptions, hydrateMessages, isMessageOptionsEmpty } from './message'
 import Renderer from './renderer'
+import { cached, defaultGuildDataStore, notifier } from './store'
 
 export * from './component'
+export * from './hook'
 
 function sync<Args extends unknown[]>(
   func: (...args: Args) => Promise<void>,
@@ -21,6 +24,13 @@ interface AudioContextData {
 }
 
 export const AudioContext = createContext<AudioContextData | null>(null)
+export const InteractionContext = createContext<Interaction | null>(null)
+
+export const GuildDataStoreContext = createContext<
+  CachedDataStore<string, unknown> & NotifyingDataStore<string, unknown> | null
+>(null)
+
+const cachedGuildDataStore = notifier(cached(defaultGuildDataStore))
 
 export function bot(
   commands: Record<string, ReactNode | ((interaction: ChatInputCommandInteraction) => Promise<void>)>,
@@ -97,59 +107,102 @@ export function bot(
       },
     }
 
-    Renderer.render(
-      <Suspense fallback={<></>}>
-        <AudioContext.Provider value={audioContext}>
-          {nodeOrFunc}
-        </AudioContext.Provider>
-      </Suspense>,
-      root,
-    )
-
-    const messageOptions = createMessageOptions(root)
-    for (let i = 0; i < messageOptions.length; i++) {
-      const options = messageOptions[i]
-
-      if (i === 0) {
-        const response = await interaction.reply({
-          ...options,
-          flags: [],
-        })
-        messages.push(await response.fetch())
-      }
-      else {
-        if (interaction.channel === null || !interaction.channel.isSendable()) {
-          return
-        }
-
-        messages.push(await interaction.channel.send({
-          ...options,
-          flags: [],
-        }))
-      }
-    }
-
-    hydrateMessages(messages, root)
+    const messageOptions: MessageCreateOptions[] = []
 
     root.onChange = async () => {
       const newOptions = createMessageOptions(root)
 
-      newOptions.forEach((options, i) => {
-        if (messages[i] !== undefined && JSON.stringify(messageOptions[i]) !== JSON.stringify(options)) {
-          messageOptions[i] = options
+      for (let i = 0; i < newOptions.length; i++) {
+        const options = newOptions[i]
+
+        if (
+          JSON.stringify(messageOptions[i]) === JSON.stringify(options)
+          || isMessageOptionsEmpty(options)
+        ) {
+          continue
+        }
+
+        messageOptions[i] = options
+
+        if (messages[i] !== undefined) {
           void messages[i].edit({
             ...options,
             flags: [],
           })
         }
-      })
+        else if (i === 0) {
+          if (interaction.deferred) {
+            messages[i] = await interaction.editReply(options)
+          }
+          else if (!isMessageOptionsEmpty(options)) {
+            const response = await interaction.reply({
+              ...options,
+              flags: [],
+            })
+            messages[i] = await response.fetch()
+          }
+          else {
+            await interaction.deferReply()
+          }
+        }
+      }
 
       for (let i = messageOptions.length; i < newOptions.length; i++) {
-        if (interaction.channel?.isSendable()) {
+        if (interaction.channel?.isSendable() && !isMessageOptionsEmpty(newOptions[i])) {
           messages.push(await interaction.channel.send(newOptions[i]))
         }
       }
+
+      hydrateMessages(messages, root)
     }
+
+    Renderer.render(
+      <Suspense fallback={<></>}>
+        <AudioContext.Provider value={audioContext}>
+          <InteractionContext.Provider value={interaction}>
+            <GuildDataStoreContext.Provider value={cachedGuildDataStore}>
+              {nodeOrFunc}
+            </GuildDataStoreContext.Provider>
+          </InteractionContext.Provider>
+        </AudioContext.Provider>
+      </Suspense>,
+      root,
+    )
+
+    // messageOptions = createMessageOptions(root)
+
+    // for (let i = 0; i < messageOptions.length; i++) {
+    //   const options = messageOptions[i]
+
+    //   if (i === 0) {
+    //     if (isMessageOptionsEmpty(options)) {
+    //       if (!interaction.replied) {
+    //         await interaction.deferReply()
+    //       }
+    //     }
+    //     else {
+    //       const response = await interaction.reply({
+    //         ...options,
+    //         flags: [],
+    //       })
+    //       messages.push(await response.fetch())
+    //     }
+    //   }
+    //   else {
+    //     if (
+    //       interaction.channel === null
+    //       || !interaction.channel.isSendable()
+    //       || isMessageOptionsEmpty(options)
+    //     ) {
+    //       return
+    //     }
+
+    //     messages.push(await interaction.channel.send({
+    //       ...options,
+    //       flags: [],
+    //     }))
+    //   }
+    // }
   }))
 
   return client

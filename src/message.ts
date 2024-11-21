@@ -45,6 +45,13 @@ export function hydrateMessages(messages: Message[], container: Container) {
   for (const message of messages) {
     for (const actionRow of message.components) {
       for (const component of actionRow.components) {
+        if (
+          component.customId === null
+          || container.hydratedIds.includes(component.customId)
+        ) {
+          continue
+        }
+
         switch (component.type) {
           case ComponentType.Button: {
             const collector = message.createMessageComponentCollector({
@@ -66,6 +73,8 @@ export function hydrateMessages(messages: Message[], container: Container) {
               onClick(interaction)
             })
 
+            container.hydratedIds.push(component.customId)
+
             break
           }
 
@@ -78,4 +87,9 @@ export function hydrateMessages(messages: Message[], container: Container) {
       }
     }
   }
+}
+
+export function isMessageOptionsEmpty(options: MessageCreateOptions) {
+  // TODO: Add more stuff here
+  return options.content === undefined || options.content.trim() === ''
 }
