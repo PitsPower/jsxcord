@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { bot, Br, Code, CodeBlock, Header, Quote, Subheader, Subsubheader, Timer, Tiny } from '.'
+import { bot, Br, Button, Code, CodeBlock, Header, Quote, Subheader, Subsubheader, Timer, Tiny } from '.'
 
 function TimerTest() {
   const [ended, setEnded] = useState(false)
@@ -17,7 +17,7 @@ const client = bot({
       <Subsubheader>Subsubheader</Subsubheader>
       <Tiny>Tiny</Tiny>
 
-      <Br />
+      <Button>Button</Button>
 
       <Code>Code</Code>
       <Br />

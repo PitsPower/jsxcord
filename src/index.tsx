@@ -107,12 +107,26 @@ export function bot(
     )
 
     const messageOptions = createMessageOptions(root)
-    for (const options of messageOptions) {
-      const response = await interaction.reply({
-        ...options,
-        flags: [],
-      })
-      messages.push(await response.fetch())
+    for (let i = 0; i < messageOptions.length; i++) {
+      const options = messageOptions[i]
+
+      if (i === 0) {
+        const response = await interaction.reply({
+          ...options,
+          flags: [],
+        })
+        messages.push(await response.fetch())
+      }
+      else {
+        if (interaction.channel === null || !interaction.channel.isSendable()) {
+          return
+        }
+
+        messages.push(await interaction.channel.send({
+          ...options,
+          flags: [],
+        }))
+      }
     }
 
     hydrateMessages(messages, root)
