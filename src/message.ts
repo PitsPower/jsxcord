@@ -1,6 +1,11 @@
 import type { Container } from './container'
+import type { Instance, InstanceOrText } from './instance'
 import { ComponentType, InteractionResponse, type Message, type MessageCreateOptions } from 'discord.js'
-import { ButtonInstance, MarkdownInstance, PollInstance, TextInstance } from './instance'
+import { ButtonInstance, MarkdownInstance, PollInstance, TextInstance, WhitelistInstance } from './instance'
+
+const UNRENDERED_MESSAGE_PARTS = [
+  WhitelistInstance,
+]
 
 const MESSAGE_PARTS = [
   [MarkdownInstance, TextInstance],
@@ -21,7 +26,10 @@ export function createMessageOptions(container: Container): MessageCreateOptions
     }
 
     while (true) {
-      const possibleInstances = MESSAGE_PARTS[currentMessageStage]
+      const possibleInstances = [
+        ...UNRENDERED_MESSAGE_PARTS,
+        ...MESSAGE_PARTS[currentMessageStage],
+      ]
       if (possibleInstances.some(InstanceClass => child instanceof InstanceClass)) {
         child.addToOptions(currentOptions)
         break
@@ -39,6 +47,33 @@ export function createMessageOptions(container: Container): MessageCreateOptions
   }
 
   return result
+}
+
+interface InstanceWithWhitelist<I extends Instance> {
+  instance: I
+  users?: string[]
+}
+
+function findButtonWithId(
+  children: InstanceOrText[],
+  id: string,
+  users: string[] = [],
+): InstanceWithWhitelist<ButtonInstance> | undefined {
+  for (const child of children) {
+    if (child instanceof ButtonInstance && child.data.customId === id) {
+      return {
+        instance: child,
+        users,
+      }
+    }
+
+    if (child instanceof WhitelistInstance) {
+      const button = findButtonWithId(child.data.children, id, child.data.users)
+      if (button !== undefined) {
+        return button
+      }
+    }
+  }
 }
 
 export function hydrateMessages(messages: Message[], container: Container) {
@@ -59,13 +94,15 @@ export function hydrateMessages(messages: Message[], container: Container) {
             })
 
             collector.on('collect', (interaction) => {
-              const button = container.children
-                .find((i): i is ButtonInstance =>
-                  i instanceof ButtonInstance && i.data.customId === component.customId,
-                )
-              const onClick = button?.data.onClick
+              if (component.customId === null) {
+                return
+              }
 
-              if (onClick === undefined) {
+              const button = findButtonWithId(container.children, component.customId)
+              const onClick = button?.instance.data.onClick
+              const allowedUsers = button?.users ?? []
+
+              if (onClick === undefined || !allowedUsers.includes(interaction.user.id)) {
                 return
               }
 

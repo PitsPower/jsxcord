@@ -153,41 +153,6 @@ export function bot(
       </Suspense>,
       root,
     )
-
-    // messageOptions = createMessageOptions(root)
-
-    // for (let i = 0; i < messageOptions.length; i++) {
-    //   const options = messageOptions[i]
-
-    //   if (i === 0) {
-    //     if (isMessageOptionsEmpty(options)) {
-    //       if (!interaction.replied) {
-    //         await interaction.deferReply()
-    //       }
-    //     }
-    //     else {
-    //       const response = await interaction.reply({
-    //         ...options,
-    //         flags: [],
-    //       })
-    //       messages.push(await response.fetch())
-    //     }
-    //   }
-    //   else {
-    //     if (
-    //       interaction.channel === null
-    //       || !interaction.channel.isSendable()
-    //       || isMessageOptionsEmpty(options)
-    //     ) {
-    //       return
-    //     }
-
-    //     messages.push(await interaction.channel.send({
-    //       ...options,
-    //       flags: [],
-    //     }))
-    //   }
-    // }
   }))
 
   return client

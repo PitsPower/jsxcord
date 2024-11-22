@@ -1,12 +1,13 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import type { TrackHandle } from './audio'
+import type { ButtonProps, Instance, WhitelistProps } from './instance'
 import type { ALL_LANGUAGES } from './languages'
 import path from 'node:path'
 import { time, TimestampStyles } from 'discord.js'
 import { createElement, useContext, useEffect, useState } from 'react'
-import { AudioContext } from '.'
+import { AudioContext, useInteraction } from '.'
 import { streamFromFile } from './audio'
-import { AnswerInstance, ButtonInstance, type Instance, MarkdownInstance, PollInstance } from './instance'
+import { AnswerInstance, ButtonInstance, MarkdownInstance, PollInstance, WhitelistInstance } from './instance'
 
 export interface NodeProps<P, I extends Instance> {
   props: P
@@ -29,9 +30,14 @@ function createComponent<P, I extends Instance>(
 }
 
 export const Answer = createComponent(AnswerInstance)
-export const Button = createComponent(ButtonInstance)
 export const Markdown = createComponent(MarkdownInstance)
 export const Poll = createComponent(PollInstance)
+
+const RawButton = createComponent(ButtonInstance)
+
+export function Button(props: PropsWithChildren<ButtonProps>) {
+  return <RawButton {...props} />
+}
 
 function createMarkdownComponent<Props>(func: (input: string, props: Props) => string) {
   return (props: PropsWithChildren<Props>) => {
@@ -104,4 +110,19 @@ export function Timer({ seconds, onEnd }: TimerProps) {
   }, [])
 
   return time(new Date(Date.now() + seconds * 1000), TimestampStyles.RelativeTime)
+}
+
+export function Whitelist(props: PropsWithChildren<Partial<WhitelistProps>>) {
+  const interaction = useInteraction()
+
+  const newProps: WhitelistProps = {
+    ...props,
+    users: props.users ?? [interaction.user.id],
+  }
+
+  return (
+    <Node props={newProps} createInstance={props => WhitelistInstance.createInstance(props)}>
+      {props.children}
+    </Node>
+  )
 }

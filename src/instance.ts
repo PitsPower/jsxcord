@@ -9,6 +9,7 @@ type InstanceType =
   | 'Markdown'
   | 'Poll'
   | 'Text'
+  | 'Whitelist'
 
 function formatType(type: InstanceType) {
   return type === 'Text' ? 'text' : `\`<${type}>\``
@@ -37,7 +38,7 @@ abstract class BaseInstance<Data> {
   public isHidden = false
 
   constructor(public data: Data) {}
-  abstract appendChild(child: Instance | TextInstance)
+  abstract appendChild(child: InstanceOrText)
   abstract addToOptions(options: MessageCreateOptions)
 }
 
@@ -55,7 +56,7 @@ export class AnswerInstance extends BaseInstance<PollAnswerData> {
     })
   }
 
-  appendChild(child: Instance | TextInstance) {
+  appendChild(child: InstanceOrText) {
     this.data.text += enforceType(child, TextInstance).data
   }
 
@@ -64,7 +65,7 @@ export class AnswerInstance extends BaseInstance<PollAnswerData> {
   }
 }
 
-interface ButtonProps {
+export interface ButtonProps {
   onClick?: (interaction: ButtonInteraction) => void
 }
 
@@ -81,7 +82,7 @@ export class ButtonInstance extends BaseInstance<InteractionButtonComponentData 
     })
   }
 
-  appendChild(child: Instance | TextInstance) {
+  appendChild(child: InstanceOrText) {
     this.data.label += enforceType(child, TextInstance).data
   }
 
@@ -103,7 +104,7 @@ export class MarkdownInstance extends BaseInstance<{ text: string }> {
     return new MarkdownInstance({ text: '' })
   }
 
-  appendChild(child: Instance | TextInstance) {
+  appendChild(child: InstanceOrText) {
     this.data.text += enforceType(child, TextInstance).data
   }
 
@@ -128,7 +129,7 @@ export class PollInstance extends BaseInstance<PollData> {
     })
   }
 
-  appendChild(child: Instance | TextInstance) {
+  appendChild(child: InstanceOrText) {
     this.data.answers = [
       ...this.data.answers,
       enforceType(child, AnswerInstance).data,
@@ -158,5 +159,33 @@ export class TextInstance extends BaseInstance<string> {
   }
 }
 
-export type Instance = AnswerInstance | ButtonInstance | MarkdownInstance | PollInstance
+export interface WhitelistProps {
+  users: string[]
+}
+
+export class WhitelistInstance extends BaseInstance<{
+  users: string[]
+  children: InstanceOrText[]
+}> {
+  static type: InstanceType = 'Whitelist'
+
+  static createInstance(props: WhitelistProps) {
+    return new WhitelistInstance({
+      users: props.users,
+      children: [],
+    })
+  }
+
+  appendChild(child: InstanceOrText) {
+    this.data.children = [...this.data.children, child]
+  }
+
+  addToOptions(options: MessageCreateOptions) {
+    for (const child of this.data.children) {
+      child.addToOptions(options)
+    }
+  }
+}
+
+export type Instance = AnswerInstance | ButtonInstance | MarkdownInstance | PollInstance | WhitelistInstance
 export type InstanceOrText = Instance | TextInstance
