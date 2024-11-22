@@ -57,7 +57,7 @@ interface InstanceWithWhitelist<I extends Instance> {
 function findButtonWithId(
   children: InstanceOrText[],
   id: string,
-  users: string[] = [],
+  users?: string[],
 ): InstanceWithWhitelist<ButtonInstance> | undefined {
   for (const child of children) {
     if (child instanceof ButtonInstance && child.data.customId === id) {
@@ -100,9 +100,12 @@ export function hydrateMessages(messages: Message[], container: Container) {
 
               const button = findButtonWithId(container.children, component.customId)
               const onClick = button?.instance.data.onClick
-              const allowedUsers = button?.users ?? []
+              const allowedUsers = button?.users
 
-              if (onClick === undefined || !allowedUsers.includes(interaction.user.id)) {
+              if (
+                onClick === undefined
+                || (allowedUsers !== undefined && !allowedUsers.includes(interaction.user.id))
+              ) {
                 return
               }
 
