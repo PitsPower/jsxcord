@@ -1,5 +1,4 @@
 import type { ChatInputCommandInteraction, Interaction, Message, MessageCreateOptions } from 'discord.js'
-import type { CachedDataStore, NotifyingDataStore } from './store'
 import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice'
 import { Client, GatewayIntentBits, GuildMember, REST, Routes, SlashCommandBuilder } from 'discord.js'
 import { createContext, type ReactNode, Suspense } from 'react'
@@ -7,16 +6,10 @@ import { Mixer } from './audio'
 import * as container from './container'
 import { createMessageOptions, hydrateMessages, isMessageOptionsEmpty } from './message'
 import Renderer from './renderer'
-import { cached, defaultGuildDataStore, notifier } from './store'
+import { sync } from './util'
 
 export * from './component'
 export * from './hook'
-
-function sync<Args extends unknown[]>(
-  func: (...args: Args) => Promise<void>,
-): (...args: Args) => void {
-  return (...args) => void func(...args).catch(console.error)
-}
 
 interface AudioContextData {
   mixer: Mixer
@@ -25,12 +18,6 @@ interface AudioContextData {
 
 export const AudioContext = createContext<AudioContextData | null>(null)
 export const InteractionContext = createContext<Interaction | null>(null)
-
-export const GuildDataStoreContext = createContext<
-  CachedDataStore<string, unknown> & NotifyingDataStore<string, unknown> | null
->(null)
-
-const cachedGuildDataStore = notifier(cached(defaultGuildDataStore))
 
 export function bot(
   commands: Record<string, ReactNode | ((interaction: ChatInputCommandInteraction) => Promise<void>)>,
@@ -160,9 +147,7 @@ export function bot(
       <Suspense fallback={<></>}>
         <AudioContext.Provider value={audioContext}>
           <InteractionContext.Provider value={interaction}>
-            <GuildDataStoreContext.Provider value={cachedGuildDataStore}>
-              {nodeOrFunc}
-            </GuildDataStoreContext.Provider>
+            {nodeOrFunc}
           </InteractionContext.Provider>
         </AudioContext.Provider>
       </Suspense>,
