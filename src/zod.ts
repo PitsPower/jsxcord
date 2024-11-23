@@ -25,10 +25,10 @@ z.ZodString.prototype.autocomplete = function (this: z.ZodString, func) {
 // This is needed instead of just `z.custom` as it gives us a class
 // that we can do `instanceof` on
 function customZodType<T>(type: { new(...args: any[]): T }) {
+  const schema = z.custom<T>(val => val instanceof type)
   return class extends z.ZodType<T> {
-    private schema = z.custom<T>(val => val instanceof type)
     _parse(input: z.ParseInput): z.ParseReturnType<T> {
-      return this.schema._parse(input)
+      return schema._parse(input)
     }
   }
 }

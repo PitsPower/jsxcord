@@ -7,8 +7,15 @@ import { time, TimestampStyles } from 'discord.js'
 import { createElement, useContext, useEffect, useState } from 'react'
 import { AudioContext, useInteraction } from '.'
 import { streamFromFile } from './audio'
-import { AnswerInstance, ButtonInstance, MarkdownInstance, PollInstance, WhitelistInstance } from './instance'
+import {
+  AnswerInstance,
+  ButtonInstance,
+  MarkdownInstance,
+  PollInstance,
+  WhitelistInstance,
+} from './instance'
 
+/** @internal */
 export interface NodeProps<P, I extends Instance> {
   props: P
   children: ReactNode
@@ -30,6 +37,25 @@ function createComponent<P, I extends Instance>(
 }
 
 export const Answer = createComponent(AnswerInstance)
+
+/**
+ * Renders Discord Markdown.
+ *
+ * By default, all Markdown in strings is escaped. If you wish
+ * to use Markdown, it's recommended that you use dedicated
+ * components, such as {@link Header | `<Header>`}.
+ *
+ * However, in cases where that won't suffice, you may pass raw Markdown
+ * into the {@link Markdown | `<Markdown>`} component instead.
+ *
+ * ### Usage
+ * ```tsx
+ * <>
+ *   <Markdown># This will render as a header.</Markdown>
+ *   # This will NOT render as a header.
+ * </>
+ * ```
+ */
 export const Markdown = createComponent(MarkdownInstance)
 export const Poll = createComponent(PollInstance)
 

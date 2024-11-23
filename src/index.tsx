@@ -1,4 +1,11 @@
+/**
+ * @packageDocumentation
+ * @categoryDescription Hooks
+ * Various JSXcord-specific React hooks.
+ */
+
 import type { ChatInputCommandInteraction, Interaction, Message, MessageCreateOptions } from 'discord.js'
+
 import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice'
 import { Client, GatewayIntentBits, GuildMember, REST, Routes, SlashCommandBuilder } from 'discord.js'
 import { createContext, type ReactNode, Suspense } from 'react'
@@ -8,17 +15,21 @@ import * as container from './container'
 import { createMessageOptions, hydrateMessages, isMessageOptionsEmpty } from './message'
 import Renderer from './renderer'
 import { sync } from './util'
+
 import { buildZodType, getOptionsAsObject, type ZodCommand } from './zod'
 
 export * from './component'
 export * from './hook'
+export * from './shared'
 
 interface AudioContextData {
   mixer: Mixer
   joinVc: () => void
 }
 
+/** @internal */
 export const AudioContext = createContext<AudioContextData | null>(null)
+/** @internal */
 export const InteractionContext = createContext<Interaction | null>(null)
 
 export function bot(

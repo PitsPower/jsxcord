@@ -4,7 +4,7 @@ import { createGuildState, JsonDataStore, useSharedState, watch } from './shared
 const CounterState = createGuildState(0, new JsonDataStore('data/counter.json'))
 
 function Counter() {
-  const [count, setCount] = useSharedState(watch(CounterState))
+  const [count, setCount] = useSharedState(CounterState)
   return (
     <>
       <>{count}</>

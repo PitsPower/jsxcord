@@ -42,7 +42,7 @@ abstract class BaseInstance<Data> {
   abstract addToOptions(options: MessageCreateOptions)
 }
 
-interface AnswerProps {
+export interface AnswerProps {
   emoji?: string
 }
 
@@ -113,7 +113,7 @@ export class MarkdownInstance extends BaseInstance<{ text: string }> {
   }
 }
 
-interface PollProps {
+export interface PollProps {
   question: string
 }
 

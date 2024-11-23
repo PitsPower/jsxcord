@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "customCss": "./typedoc.theme.css",
+  "name": "JSXcord",
+  "lang": "en",
+  "entryPoints": ["./src"],
+  "navigation": {
+    "includeCategories": true
+  },
+  "excludeInternal": true,
+  "highlightLanguages": [
+    "typescript",
+    "tsx",
+    "json"
+  ],
+  "markdownItOptions": {
+    "html": true
+  },
+  "includeVersion": true,
+  "plugin": ["@mxssfd/typedoc-theme"],
+  "theme": "my-theme",
+  "sort": ["static-first", "kind", "enum-value-ascending"],
+  "out": "./docs"
+}

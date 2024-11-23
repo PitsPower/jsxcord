@@ -5,65 +5,147 @@ import { use } from 'react-use-polyfill'
 import { useInteraction } from './hook'
 import { sync } from './util'
 
-export abstract class DataStore<S> extends EventEmitter<{ change: [{ key: string, value: S }] }> {
-  private static HAS_EMITTED = Symbol('HAS_EMITTED')
+/**
+ * A generic class for specifying a way of storing data.
+ *
+ * {@link DataStore | `DataStore`} objects can be passed into shared state creators,
+ * such as {@link createGuildState | `createGuildState`}, like so:
+ *
+ * ```ts
+ * // Stores the value of `CounterState` in a JSON file.
+ * const CounterState = createGuildState(0, new JsonDataStore("data/counter.json"))
+ * ```
+ *
+ * You can extend {@link DataStore | `DataStore`} yourself to enable custom storage methods.
+ * Here's an example of a {@link DataStore | `DataStore`} that stores data in memory:
+ * ```
+ * class MemoryDataStore<S> extends DataStore<S> {
+ *   private data: Record<string, S> = {}
+ *
+ *   async get(key: string, initialValue: S) {
+ *     return key in this.data ? this.data[key] : initialValue
+ *   }
+ *
+ *   async set(key: string, value: S) {
+ *     this.data[key] = value
+ *   }
+ * }
+ * ```
+ *
+ * @typeParam Data - The data type stored in the {@link DataStore | `DataStore`}.
+ */
+export abstract class DataStore<Data> extends EventEmitter<{ change: [{ key: string, value: Data }] }> {
+  /**
+   * Gets some data from the {@link DataStore | `DataStore`}.
+   *
+   * @param key The key to get data from.
+   *
+   * The value of this key depends on context.
+   * For example, when the {@link DataStore | `DataStore`} is used in
+   * {@link createGuildState | `createGuildState`}, the key will be the guild id.
+   *
+   * @param initialValue The initial value of the data.
+   * Return this if no data is present.
+   *
+   * @returns The data.
+   */
+  abstract get(key: string, initialValue: Data): Promise<Data>
 
-  abstract get(key: string, initialValue: S): Promise<S>
-  abstract set(key: string, value: S): Promise<typeof DataStore.HAS_EMITTED>
+  /**
+   * Sets some data in the {@link DataStore | `DataStore`}.
+   *
+   * @param key The key to set data in.
+   *
+   * The value of this key depends on context.
+   * For example, when the {@link DataStore | `DataStore`} is used in
+   * {@link createGuildState | `createGuildState`}, the key will be the guild id.
+   *
+   * @param value The value to set it.
+   */
+  abstract set(key: string, value: Data): Promise<void>
 
-  emitChange(key: string, value: S): typeof DataStore.HAS_EMITTED {
-    this.emit('change', { key, value })
-    return DataStore.HAS_EMITTED
-  }
-
-  async update(key: string, initialValue: S, transition: (prevState: S) => S) {
+  /**
+   * Updates some data in the {@link DataStore | `DataStore`}
+   * according to a transition function.
+   *
+   * This is useful if your storage method supports atomic transactions,
+   * In that case, you should implement this method using transactions
+   * for extra safety.
+   *
+   * @param key The key to set data in.
+   *
+   * The value of this key depends on context.
+   * For example, when the {@link DataStore | `DataStore`} is used in
+   * {@link createGuildState | `createGuildState`}, the key will be the guild id.
+   *
+   * @param initialValue The initial value of the data.
+   *
+   * @param transition A function that maps the old data to the new data.
+   */
+  async update(key: string, initialValue: Data, transition: (prevData: Data) => Data) {
     const value = transition(await this.get(key, initialValue))
     await this.set(key, value)
     return value
   }
+
+  /** @internal */
+  async updateAndEmit(key: string, initialValue: Data, transition: (prevState: Data) => Data) {
+    const value = await this.update(key, initialValue, transition)
+    this.emit('change', { key, value })
+    return value
+  }
 }
 
-class MemoryDataStore<S> extends DataStore<S> {
-  private data: Record<string, S> = {}
+class MemoryDataStore<Data> extends DataStore<Data> {
+  private data: Record<string, Data> = {}
 
-  async get(key: string, initialValue: S) {
+  async get(key: string, initialValue: Data) {
     return key in this.data ? this.data[key] : initialValue
   }
 
-  async set(key: string, value: S) {
+  async set(key: string, value: Data) {
     this.data[key] = value
-    return super.emitChange(key, value)
   }
 }
-
-export class JsonDataStore<S> extends DataStore<S> {
+/**
+ * An implementation of {@link DataStore | `DataStore`} that stores
+ * data in a JSON file.
+ *
+ * @typeParam Data - The data type stored in the {@link JsonDataStore | `JsonDataStore`}.
+ */
+export class JsonDataStore<Data> extends DataStore<Data> {
+  /**
+   * @param fp The file path to store the data in.
+   */
   constructor(private fp: string) {
     super()
     fs.access(fp).catch(async () => fs.writeFile(fp, '{}'))
   }
 
-  async get(key: string, initialValue: S) {
-    const data = JSON.parse(await fs.readFile(this.fp, 'utf8')) as Record<string, S>
+  async get(key: string, initialValue: Data) {
+    const data = JSON.parse(await fs.readFile(this.fp, 'utf8')) as Record<string, Data>
     return key in data ? data[key] : initialValue
   }
 
-  async set(key: string, value: S) {
-    const data = JSON.parse(await fs.readFile(this.fp, 'utf8')) as Record<string, S>
+  async set(key: string, value: Data) {
+    const data = JSON.parse(await fs.readFile(this.fp, 'utf8')) as Record<string, Data>
     data[key] = value
     await fs.writeFile(this.fp, JSON.stringify(data))
-    return super.emitChange(key, value)
   }
 }
 
-interface SharedState<S> {
+interface SharedState<Data> {
   readonly _type: 'guild'
-  readonly _initialValue: S
+  readonly _initialValue: Data
   readonly _isWatching: boolean
-  readonly _dataStore: DataStore<S>
-  readonly _cache: Record<string, Promise<S>>
+  readonly _dataStore: DataStore<Data>
+  readonly _cache: Record<string, Promise<Data>>
 }
 
-export function createGuildState<S>(initialValue: S, dataStore?: DataStore<S>): SharedState<S> {
+export function createGuildState<Data>(
+  initialValue: Data,
+  dataStore?: DataStore<Data>,
+): SharedState<Data> {
   return {
     _type: 'guild',
     _initialValue: initialValue,
@@ -73,15 +155,15 @@ export function createGuildState<S>(initialValue: S, dataStore?: DataStore<S>): 
   }
 }
 
-export function watch<S>(sharedState: SharedState<S>): SharedState<S> {
+export function watch<Data>(sharedState: SharedState<Data>): SharedState<Data> {
   return { ...sharedState, _isWatching: true }
 }
 
-export function useSharedState<S>(
-  sharedState: SharedState<S>,
-): [S, (transition: (prevState: S) => S) => void] {
+export function useSharedState<Data>(
+  sharedState: SharedState<Data>,
+): [Data, (transition: (prevState: Data) => Data) => void] {
   const interaction = useInteraction()
-  const keys: Record<SharedState<S>['_type'], string | null> = {
+  const keys: Record<SharedState<Data>['_type'], string | null> = {
     guild: interaction.guildId,
   }
   const key = keys[sharedState._type]
@@ -98,8 +180,8 @@ export function useSharedState<S>(
 
   const [state, setState] = useState(value)
 
-  const newSetState = sync(async (transition: (prevState: S) => S) => {
-    const data = await sharedState._dataStore.update(key, sharedState._initialValue, transition)
+  const newSetState = sync(async (transition: (prevState: Data) => Data) => {
+    const data = await sharedState._dataStore.updateAndEmit(key, sharedState._initialValue, transition)
     setState(data)
   })
 
