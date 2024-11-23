@@ -2,11 +2,13 @@ import type { ChatInputCommandInteraction, Interaction, Message, MessageCreateOp
 import { createAudioPlayer, joinVoiceChannel } from '@discordjs/voice'
 import { Client, GatewayIntentBits, GuildMember, REST, Routes, SlashCommandBuilder } from 'discord.js'
 import { createContext, type ReactNode, Suspense } from 'react'
+import { z } from 'zod'
 import { Mixer } from './audio'
 import * as container from './container'
 import { createMessageOptions, hydrateMessages, isMessageOptionsEmpty } from './message'
 import Renderer from './renderer'
 import { sync } from './util'
+import { buildZodType, getOptionsAsObject, type ZodCommand } from './zod'
 
 export * from './component'
 export * from './hook'
@@ -20,7 +22,12 @@ export const AudioContext = createContext<AudioContextData | null>(null)
 export const InteractionContext = createContext<Interaction | null>(null)
 
 export function bot(
-  commands: Record<string, ReactNode | ((interaction: ChatInputCommandInteraction) => Promise<void>)>,
+  commands: Record<
+    string,
+    | ReactNode
+    | ((interaction: ChatInputCommandInteraction) => Promise<void>)
+    | ZodCommand<z.ZodRawShape, true>
+  >,
 ): Client {
   const client = new Client({ intents: [
     GatewayIntentBits.Guilds,
@@ -33,11 +40,19 @@ export function bot(
     void rest.put(
       Routes.applicationCommands(client.user.id),
       {
-        body: Object.keys(commands).map(name =>
-          new SlashCommandBuilder()
+        body: Object.entries(commands).map(([name, command]) => {
+          const builder = new SlashCommandBuilder()
             .setName(name)
             .setDescription('No description')
-            .toJSON(),
+
+          if (command instanceof z.ZodObject) {
+            for (const [key, value] of Object.entries(command.shape as object)) {
+              buildZodType(builder, key, value)
+            }
+          }
+
+          return builder.toJSON()
+        },
         ),
       },
     )
@@ -48,11 +63,16 @@ export function bot(
       return
     }
 
-    const nodeOrFunc = commands[interaction.commandName]
+    let command = commands[interaction.commandName]
 
-    if (typeof nodeOrFunc === 'function') {
-      await nodeOrFunc(interaction)
+    if (typeof command === 'function') {
+      await command(interaction)
       return
+    }
+
+    if (command instanceof z.ZodObject) {
+      const options = command.parse(getOptionsAsObject(interaction.options))
+      command = command._componentFunc(options)
     }
 
     const root = container.create(client)
@@ -147,7 +167,7 @@ export function bot(
       <Suspense fallback={<></>}>
         <AudioContext.Provider value={audioContext}>
           <InteractionContext.Provider value={interaction}>
-            {nodeOrFunc}
+            {command}
           </InteractionContext.Provider>
         </AudioContext.Provider>
       </Suspense>,
