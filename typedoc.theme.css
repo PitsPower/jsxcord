@@ -4,6 +4,7 @@
   --dark-color-background: #000;
   --dark-color-background-secondary: #111;
   --dark-color-accent: #161616;
+  --dark-color-active-menu-item: #292929;
 }
 
 body {
@@ -17,6 +18,11 @@ footer {
 
 pre {
   border: none;
+  border-radius: 0;
+}
+
+code {
+  border-radius: 0;
 }
 
 h1 {
@@ -37,6 +43,23 @@ h1 {
 
 svg:has(> use[href="#icon-folder"]) {
   margin-right: 0.3rem;
+}
+
+#icon-1 rect, #icon-64 rect, #icon-128 rect {
+  fill-opacity: 0.5;
+  rx: 0;
+}
+
+#icon-1 rect {
+  fill: var(--color-ts-module);
+}
+
+#icon-64 rect {
+  fill: var(--color-ts-function);
+}
+
+#icon-128 rect {
+  fill: var(--color-ts-class);
 }
 
 .tsd-page-title h1 {
