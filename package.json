@@ -4,6 +4,10 @@
   "description": "Build Discord bots using React",
   "author": "PitsPower",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PitsPower/jsxcord.git"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -12,6 +16,7 @@
   ],
   "scripts": {
     "build": "typedoc src/index.tsx && tsup",
+    "docs": "typedoc src/index.tsx",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "peerDependencies": {

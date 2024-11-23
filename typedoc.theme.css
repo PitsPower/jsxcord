@@ -1,5 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+  --dark-color-background: #000;
+  --dark-color-background-secondary: #111;
+  --dark-color-accent: #161616;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+        Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"
+}
+
 footer {
   display: none;
+}
+
+pre {
+  border: none;
+}
+
+h1 {
+  letter-spacing: .01rem;
+}
+
+.tsd-page-toolbar {
+  border-bottom: none;
+}
+
+#icon-folder rect {
+  display: none;
+}
+
+#icon-folder g {
+  stroke-width: 2.5;
+}
+
+svg:has(> use[href="#icon-folder"]) {
+  margin-right: 0.3rem;
 }
 
 .tsd-page-title h1 {
