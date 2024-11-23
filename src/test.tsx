@@ -1,15 +1,20 @@
-import { z } from 'zod'
-import { bot } from '.'
-import { command } from './zod'
+import { bot, Button } from '.'
+import { createGuildState, JsonDataStore, useSharedState, watch } from './shared'
 
-const saySchema = command({ message: z.string() })
+const CounterState = createGuildState(0, new JsonDataStore('data/counter.json'))
 
-function Say({ message }: z.infer<typeof saySchema>) {
-  return message
+function Counter() {
+  const [count, setCount] = useSharedState(watch(CounterState))
+  return (
+    <>
+      <>{count}</>
+      <Button onClick={() => setCount(count => count + 1)}>Increment</Button>
+    </>
+  )
 }
 
 const client = bot({
-  say: saySchema.component(Say),
+  counter: <Counter />,
 })
 
 client
