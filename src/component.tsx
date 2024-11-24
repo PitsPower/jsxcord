@@ -43,7 +43,7 @@ export const Answer = createComponent(AnswerInstance)
  *
  * By default, all Markdown in strings is escaped. If you wish
  * to use Markdown, it's recommended that you use dedicated
- * components, such as {@link Header | `<Header>`}.
+ * components, such as {@link Heading | `<Heading>`}.
  *
  * However, in cases where that won't suffice, you may pass raw Markdown
  * into the {@link Markdown | `<Markdown>`} component instead.
@@ -51,8 +51,8 @@ export const Answer = createComponent(AnswerInstance)
  * ### Usage
  * ```tsx
  * <>
- *   <Markdown># This will render as a header.</Markdown>
- *   # This will NOT render as a header.
+ *   <Markdown># This will render as a heading.</Markdown>
+ *   # This will NOT render as a heading.
  * </>
  * ```
  */
@@ -77,9 +77,9 @@ function createMarkdownComponent<Props>(func: (input: string, props: Props) => s
 
 export const Br = () => '\n'
 
-export const Header = createMarkdownComponent(str => `# ${str}\n`)
-export const Subheader = createMarkdownComponent(str => `## ${str}\n`)
-export const Subsubheader = createMarkdownComponent(str => `### ${str}\n`)
+export const Heading = createMarkdownComponent(str => `# ${str}\n`)
+export const Subheading = createMarkdownComponent(str => `## ${str}\n`)
+export const Subsubheading = createMarkdownComponent(str => `### ${str}\n`)
 export const Tiny = createMarkdownComponent(str => `-# ${str}\n`)
 
 export const Code = createMarkdownComponent(str => `\`${str}\``)

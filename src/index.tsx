@@ -1,5 +1,9 @@
 /**
  * @packageDocumentation
+ *
+ * @categoryDescription Core
+ * Core classes and functions.
+ *
  * @categoryDescription Hooks
  * Various JSXcord-specific React hooks.
  */
@@ -32,12 +36,27 @@ export const AudioContext = createContext<AudioContextData | null>(null)
 /** @internal */
 export const InteractionContext = createContext<Interaction | null>(null)
 
+/**
+ * Creates a Discord.js `Client`.
+ *
+ * @param commands The bot's commands.
+ *
+ * This object specifies commands, where each key is the name
+ * of a command, and each value is either:
+ * - A `ReactNode` to be rendered.
+ * - A {@link ZodCommand | `ZodCommand`}.
+ * - A function that accepts a `ChatInputCommandInteraction`.
+ *
+ * @returns A Discord.js `Client`.
+ *
+ * @category Core
+ */
 export function bot(
   commands: Record<
     string,
     | ReactNode
-    | ((interaction: ChatInputCommandInteraction) => Promise<void>)
     | ZodCommand<z.ZodRawShape, true>
+    | ((interaction: ChatInputCommandInteraction) => Promise<void>)
   >,
 ): Client {
   const client = new Client({ intents: [

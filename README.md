@@ -45,7 +45,7 @@ bot({ counter: <Counter /> }).login(BOT_TOKEN)
 
 Nearly all visual (and auditory!) elements of a Discord bot have their own component. Some examples include:
 
-- {@link Header | `<Header>`}, {@link Subheader | `<Subheader>`}, etc. for headers of various sizes.
+- {@link Heading | `<Heading>`}, {@link Subheading | `<Subheading>`}, etc. for headings of various sizes.
 - {@link Button | `<Button>`} for interactive buttons.
 - {@link Audio | `<Audio>`} for playing audio in a voice channel.
 - Many more!

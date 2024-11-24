@@ -1,5 +1,4 @@
-import { bot, Button } from '.'
-import { createGuildState, JsonDataStore, useSharedState, watch } from './shared'
+import { bot, Button, createGuildState, JsonDataStore, useSharedState } from '.'
 
 const CounterState = createGuildState(0, new JsonDataStore('data/counter.json'))
 
@@ -7,7 +6,7 @@ function Counter() {
   const [count, setCount] = useSharedState(CounterState)
   return (
     <>
-      <>{count}</>
+      Count: {count}
       <Button onClick={() => setCount(count => count + 1)}>Increment</Button>
     </>
   )
