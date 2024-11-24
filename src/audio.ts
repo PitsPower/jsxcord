@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { Readable } from 'node:stream'
 import { createAudioResource, StreamType } from '@discordjs/voice'
-import { FFmpeg } from 'prism-media'
+import FFmpeg from './ffmpeg'
 
 /** How long in milliseconds to wait between sending stream data */
 const MS_PER_SEND = 20
@@ -229,7 +229,11 @@ class MixerStream extends Readable {
 export function streamFromFile(fp: string): Readable {
   const ffmpeg = new FFmpeg({
     args: `-i ${fp} -ar 48k -ac 2 -af apad=pad_dur=5 -f s16le`.split(' '),
+    source: 'ffmpeg',
   })
+
+  // // eslint-disable-next-line ts/no-unsafe-call, ts/no-unsafe-member-access, no-console
+  // ffmpeg.process.stderr?.on('data', data => console.log(data.toString()))
 
   return ffmpeg
 }

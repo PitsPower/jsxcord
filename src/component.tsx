@@ -3,6 +3,7 @@ import type { TrackHandle } from './audio'
 import type { ButtonProps, Instance, WhitelistProps } from './instance'
 import type { ALL_LANGUAGES } from './languages'
 import path from 'node:path'
+import { URL } from 'node:url'
 import { time, TimestampStyles } from 'discord.js'
 import { createElement, useContext, useEffect, useState } from 'react'
 import { AudioContext, useInteraction } from '.'
@@ -95,6 +96,16 @@ interface AudioProps {
   paused?: boolean
 }
 
+function isUrl(input: string) {
+  try {
+    const _url = new URL(input)
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
 export function Audio({ src, paused }: AudioProps) {
   const audioContext = useContext(AudioContext)
   const [track, setTrack] = useState<TrackHandle | null>(null)
@@ -102,7 +113,7 @@ export function Audio({ src, paused }: AudioProps) {
   useEffect(() => {
     audioContext?.joinVc()
 
-    const stream = streamFromFile(path.resolve(src))
+    const stream = streamFromFile(isUrl(src) ? src : path.resolve(src))
     setTrack(audioContext?.mixer.playTrack(stream, paused) ?? null)
 
     return () => {

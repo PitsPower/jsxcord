@@ -25,6 +25,7 @@ import { buildZodType, getOptionsAsObject, type ZodCommand } from './zod'
 export * from './component'
 export * from './hook'
 export * from './shared'
+export * from './zod'
 
 interface AudioContextData {
   mixer: Mixer
